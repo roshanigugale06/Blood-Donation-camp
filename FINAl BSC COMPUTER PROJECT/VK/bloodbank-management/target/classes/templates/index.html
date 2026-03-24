@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Bank Management System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="blood-icon">
+                🩸
+            </div>
+            <div class="login-header">
+                <h2>Welcome to Blood Bank</h2>
+                <p>Save lives by donating blood</p>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <a th:href="@{/admin/login}" class="btn btn-primary" style="background: var(--secondary-color);">Admin Login</a>
+                <a th:href="@{/user/login}" class="btn btn-primary">User Login</a>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <p>New user? <a th:href="@{/user/register}" style="color: var(--primary-color);">Register here</a></p>
+            </div>
+            
+            <div class="stats-grid" style="margin-top: 30px;">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="stat-icon">❤️</div>
+                    <div class="stat-number">1000+</div>
+                    <div class="stat-label">Lives Saved</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="stat-icon">🩸</div>
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Donors</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

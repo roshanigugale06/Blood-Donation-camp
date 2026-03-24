@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Donation - Blood Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/user/dashboard" class="navbar-brand">Blood Bank User Portal</a>
+            <ul class="navbar-menu">
+                <li><a href="/user/dashboard">Dashboard</a></li>
+                <li><a href="/user/profile">Profile</a></li>
+                <li><a href="/user/request-blood">Request Blood</a></li>
+                <li><a href="/user/register-donation" class="active">Donate Blood</a></li>
+                <li><a href="/user/donation-history">My Donations</a></li>
+                <li>
+                    <form th:action="@{/user/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Register Donation Form -->
+    <div class="container">
+        <div class="dashboard-container" style="max-width: 800px; margin: 0 auto;">
+            <!-- Display error message if any -->
+            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+            
+            <div class="login-header">
+                <h2>Register Blood Donation</h2>
+                <p>Your donation can save up to 3 lives</p>
+            </div>
+            
+            <!-- Eligibility Alert -->
+            <div th:if="${isEligible != null and !isEligible}" class="alert alert-warning">
+                <strong>Note:</strong> You may not be eligible to donate blood if you have donated within the last 3 months. 
+                Please consult with our medical staff.
+            </div>
+            
+            <form th:action="@{/user/register-donation}" method="post" th:object="${donation}">
+                <div class="form-group">
+                    <label>Blood Group *</label>
+                    <select th:field="*{bloodGroup}" required>
+                        <option value="">Select Your Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Quantity (ml) *</label>
+                    <input type="number" th:field="*{quantity}" placeholder="Usually 350-450 ml" min="350" max="450" value="450" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Hospital/Donation Center *</label>
+                    <input type="text" th:field="*{hospitalName}" placeholder="Enter hospital or donation center name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Donation Type *</label>
+                    <select th:field="*{donationType}" required>
+                        <option value="">Select Type</option>
+                        <option value="VOLUNTARY">Voluntary Donation</option>
+                        <option value="REPLACEMENT">Replacement Donation</option>
+                        <option value="DIRECTED">Directed Donation</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Health Status</label>
+                    <textarea th:field="*{healthStatus}" placeholder="Any health conditions or medications? (Optional)" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Additional Notes</label>
+                    <textarea th:field="*{notes}" placeholder="Any additional information" rows="2"></textarea>
+                </div>
+                
+                <!-- Donation Guidelines -->
+                <div style="background: var(--light-bg); padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h4>Donation Guidelines</h4>
+                    <ul style="margin-top: 10px; padding-left: 20px;">
+                        <li>You must be at least 18 years old and weigh at least 50 kg</li>
+                        <li>You should be in good health at the time of donation</li>
+                        <li>Eat a healthy meal and drink plenty of water before donating</li>
+                        <li>Bring a valid ID proof to the donation center</li>
+                        <li>Inform staff about any medications you're taking</li>
+                    </ul>
+                </div>
+                
+                <div style="display: flex; gap: 15px;">
+                    <button type="submit" class="btn btn-primary">Register Donation</button>
+                    <a href="/user/dashboard" class="btn btn-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved.</p>
+    </div>
+</body>
+</html>

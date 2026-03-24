@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Blood Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/admin/dashboard" class="navbar-brand">Blood Bank Admin</a>
+            <ul class="navbar-menu">
+                <li><a href="/admin/dashboard" class="active">Dashboard</a></li>
+                <li><a href="/admin/manage-users">Manage Users</a></li>
+                <li><a href="/admin/manage-stock">Blood Stock</a></li>
+                <li><a href="/admin/requests">Requests</a></li>
+                <li><a href="/admin/donations">Donations</a></li>
+                <li>
+                    <form th:action="@{/admin/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Dashboard Content -->
+    <div class="container">
+        <div class="dashboard-container">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-number" th:text="${totalUsers}">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="stat-icon">🩸</div>
+                    <div class="stat-number" th:text="${totalDonations}">0</div>
+                    <div class="stat-label">Donations</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-number" th:text="${totalRequests}">0</div>
+                    <div class="stat-label">Total Requests</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-number" th:text="${pendingRequests}">0</div>
+                    <div class="stat-label">Pending Requests</div>
+                </div>
+            </div>
+            
+            <!-- Blood Stock Table -->
+            <h3 style="margin: 30px 0 20px;">Current Blood Stock</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Blood Group</th>
+                            <th>Units</th>
+                            <th>Quantity (ml)</th>
+                            <th>Location</th>
+                            <th>Last Updated</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="stock : ${bloodStocks}">
+                            <td><strong th:text="${stock.bloodGroup}"></strong></td>
+                            <td th:text="${stock.units}"></td>
+                            <td th:text="${stock.quantity} + ' ml'"></td>
+                            <td th:text="${stock.storageLocation}"></td>
+                            <td th:text="${#temporals.format(stock.lastUpdated, 'dd-MM-yyyy HH:mm')}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${stock.units < 5} ? 'badge-danger' : 'badge-success'">
+                                    <span th:text="${stock.units < 5} ? 'Low Stock' : 'Available'"></span>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Recent Requests -->
+            <h3 style="margin: 30px 0 20px;">Recent Blood Requests</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Blood Group</th>
+                            <th>Units</th>
+                            <th>Hospital</th>
+                            <th>Request Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="request : ${recentRequests}">
+                            <td th:text="${request.patientName}"></td>
+                            <td><strong th:text="${request.bloodGroup}"></strong></td>
+                            <td th:text="${request.units}"></td>
+                            <td th:text="${request.hospitalName}"></td>
+                            <td th:text="${#temporals.format(request.requestDate, 'dd-MM-yyyy')}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${request.status == 'PENDING'} ? 'badge-warning' : 
+                                    (${request.status == 'APPROVED'} ? 'badge-success' : 'badge-danger')" 
+                                    th:text="${request.status}"></span>
+                            </td>
+                            <td>
+                                <a th:href="@{/admin/requests}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">View</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved. | <a href="#">Privacy Policy</a></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation History - Blood Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/user/dashboard" class="navbar-brand">Blood Bank User Portal</a>
+            <ul class="navbar-menu">
+                <li><a href="/user/dashboard">Dashboard</a></li>
+                <li><a href="/user/profile">Profile</a></li>
+                <li><a href="/user/request-blood">Request Blood</a></li>
+                <li><a href="/user/register-donation">Donate Blood</a></li>
+                <li><a href="/user/donation-history" class="active">My Donations</a></li>
+                <li>
+                    <form th:action="@{/user/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Donation History Content -->
+    <div class="container">
+        <div class="dashboard-container">
+            <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+            
+            <div class="login-header">
+                <h2>My Donation History</h2>
+                <p>Track your blood donation journey</p>
+            </div>
+            
+            <!-- Donation Stats -->
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="stat-icon">❤️</div>
+                    <div class="stat-number" th:text="${#lists.size(donations)}">0</div>
+                    <div class="stat-label">Total Donations</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="stat-icon">🩸</div>
+                    <div class="stat-number" th:text="${#aggregates.sum(donations.![quantity])}">0</div>
+                    <div class="stat-label">Total Blood (ml)</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-number" th:text="${#lists.size(donations.?[status == 'APPROVED'])}">0</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-number" th:text="${#lists.size(donations.?[status == 'PENDING'])}">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+            
+            <!-- Donation Table -->
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Blood Group</th>
+                            <th>Quantity (ml)</th>
+                            <th>Hospital</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Next Eligible</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="donation : ${donations}">
+                            <td th:text="${#temporals.format(donation.donationDate, 'dd-MM-yyyy')}"></td>
+                            <td><strong th:text="${donation.bloodGroup}"></strong></td>
+                            <td th:text="${donation.quantity} + ' ml'"></td>
+                            <td th:text="${donation.hospitalName}"></td>
+                            <td th:text="${donation.donationType}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${donation.status == 'PENDING'} ? 'badge-warning' : 
+                                    (${donation.status == 'APPROVED'} ? 'badge-success' : 'badge-danger')" 
+                                    th:text="${donation.status}"></span>
+                            </td>
+                            <td th:text="${donation.nextEligibleDate != null ? #temporals.format(donation.nextEligibleDate, 'dd-MM-yyyy') : 'N/A'}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(donations)}">
+                            <td colspan="7" style="text-align: center; padding: 40px;">
+                                <p style="font-size: 18px; margin-bottom: 20px;">No donation history found</p>
+                                <a href="/user/register-donation" class="btn btn-primary">Register as Donor</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Eligibility Check -->
+            <div style="margin-top: 30px; background: var(--light-bg); padding: 20px; border-radius: 10px;">
+                <h4>Donation Eligibility</h4>
+                <p>You can donate blood every 3 months. Check your eligibility:</p>
+                <div style="margin-top: 15px;">
+                    <span class="badge" style="font-size: 14px; padding: 8px 15px;" 
+                          th:classappend="${isEligible} ? 'badge-success' : 'badge-danger'">
+                        <span th:text="${isEligible} ? '✅ You are eligible to donate' : '❌ You are not eligible to donate yet'"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved.</p>
+    </div>
+</body>
+</html>

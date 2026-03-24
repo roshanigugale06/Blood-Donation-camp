@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Blood Stock - Blood Bank Admin</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn-add {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-add:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/admin/dashboard" class="navbar-brand">Blood Bank Admin</a>
+            <ul class="navbar-menu">
+                <li><a href="/admin/dashboard">Dashboard</a></li>
+                <li><a href="/admin/manage-users">Manage Users</a></li>
+                <li><a href="/admin/manage-stock" class="active">Blood Stock</a></li>
+                <li><a href="/admin/requests">Requests</a></li>
+                <li><a href="/admin/donations">Donations</a></li>
+                <li>
+                    <form th:action="@{/admin/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Manage Stock Content -->
+    <div class="container">
+        <div class="dashboard-container">
+            <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+            
+            <div class="login-header">
+                <h2>Manage Blood Stock</h2>
+                <p>Update and monitor blood inventory</p>
+            </div>
+            
+            <!-- Action Bar with Add Stock Button -->
+            <div class="action-bar">
+                <div></div>
+                <button class="btn-add" onclick="showAddStockModal()">
+                    <span>➕</span> Add New Stock
+                </button>
+            </div>
+            
+            <!-- Stock Summary -->
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-number" th:text="${stocks != null ? #aggregates.sum(stocks.![units]) : 0}">0</div>
+                    <div class="stat-label">Total Units</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="stat-icon">🩸</div>
+                    <div class="stat-number" th:text="${stocks != null ? #aggregates.sum(stocks.![quantity]) : 0}">0</div>
+                    <div class="stat-label">Total Volume (ml)</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-number" th:text="${stocks != null ? #lists.size(stocks.?[units < 5]) : 0}">0</div>
+                    <div class="stat-label">Low Stock Items</div>
+                </div>
+            </div>
+            
+            <!-- Stock Table -->
+            <div class="table-responsive">
+                <table id="stockTable">
+                    <thead>
+                        <tr>
+                            <th>Blood Group</th>
+                            <th>Units</th>
+                            <th>Quantity (ml)</th>
+                            <th>Location</th>
+                            <th>Last Updated</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="stock : ${stocks}" 
+                            th:attr="data-bloodgroup=${stock.bloodGroup}, data-units=${stock.units}, data-location=${stock.storageLocation}">
+                            <td><strong style="font-size: 18px;" th:text="${stock.bloodGroup}"></strong></td>
+                            <td>
+                                <span th:text="${stock.units}" 
+                                      th:class="${stock.units < 5} ? 'badge badge-danger' : ''"></span>
+                            </td>
+                            <td th:text="${stock.quantity} + ' ml'"></td>
+                            <td th:text="${stock.storageLocation}"></td>
+                            <td th:text="${stock.lastUpdated != null ? #temporals.format(stock.lastUpdated, 'dd-MM-yyyy HH:mm') : 'Never'}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${stock.units < 5} ? 'badge-danger' : 
+                                    (${stock.units < 10} ? 'badge-warning' : 'badge-success')">
+                                    <span th:text="${stock.units < 5} ? 'Critical' : 
+                                        (${stock.units < 10} ? 'Low' : 'Normal')"></span>
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" 
+                                        th:attr="onclick='showUpdateModal(\'' + ${stock.bloodGroup} + '\', ' + ${stock.units} + ', \'' + ${stock.storageLocation} + '\')'">
+                                    Update
+                                </button>
+                            </td>
+                        </tr>
+                        <tr th:if="${stocks == null or #lists.isEmpty(stocks)}">
+                            <td colspan="7" style="text-align: center; padding: 40px;">
+                                <p style="font-size: 18px; margin-bottom: 20px;">No stock data found</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Update Stock Modal -->
+    <div id="updateModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Update Blood Stock</h3>
+                <button class="modal-close" onclick="closeUpdateModal()">&times;</button>
+            </div>
+            <form id="updateStockForm" th:action="@{/admin/update-stock}" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="stockId">
+                    
+                    <div class="form-group">
+                        <label>Blood Group</label>
+                        <input type="text" name="bloodGroup" id="updateBloodGroup" readonly class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Units *</label>
+                        <input type="number" name="units" id="updateUnits" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Storage Location</label>
+                        <input type="text" name="storageLocation" id="updateStorageLocation">
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="closeUpdateModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Stock Modal -->
+    <div id="addStockModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Blood Stock</h3>
+                <button class="modal-close" onclick="closeAddStockModal()">&times;</button>
+            </div>
+            <form id="addStockForm" th:action="@{/admin/add-stock}" method="post">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Blood Group *</label>
+                        <select name="bloodGroup" id="addBloodGroup" required>
+                            <option value="">Select Blood Group</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Units to Add *</label>
+                        <input type="number" name="units" id="addUnits" min="1" required>
+                        <small style="color: #666;">1 unit = 450ml</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Storage Location</label>
+                        <input type="text" name="storageLocation" id="addStorageLocation" placeholder="e.g., Section A-1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Expiry Date (Optional)</label>
+                        <input type="date" name="expiryDate" id="addExpiryDate">
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="closeAddStockModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function showUpdateModal(bloodGroup, units, location) {
+            // Handle string values properly
+            if (location === 'null' || location === 'undefined') {
+                location = '';
+            }
+            
+            document.getElementById('updateBloodGroup').value = bloodGroup;
+            document.getElementById('updateUnits').value = units;
+            document.getElementById('updateStorageLocation').value = location;
+            document.getElementById('updateModal').style.display = 'block';
+        }
+        
+        function closeUpdateModal() {
+            document.getElementById('updateModal').style.display = 'none';
+        }
+        
+        function showAddStockModal() {
+            document.getElementById('addStockModal').style.display = 'block';
+            // Reset form
+            document.getElementById('addStockForm').reset();
+        }
+        
+        function closeAddStockModal() {
+            document.getElementById('addStockModal').style.display = 'none';
+        }
+        
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            var updateModal = document.getElementById('updateModal');
+            var addModal = document.getElementById('addStockModal');
+            
+            if (event.target == updateModal) {
+                updateModal.style.display = 'none';
+            }
+            if (event.target == addModal) {
+                addModal.style.display = 'none';
+            }
+        }
+    </script>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved.</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - Blood Bank Admin</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .filter-section {
+            background: var(--light-bg);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-select {
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            min-width: 150px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/admin/dashboard" class="navbar-brand">Blood Bank Admin</a>
+            <ul class="navbar-menu">
+                <li><a href="/admin/dashboard">Dashboard</a></li>
+                <li><a href="/admin/manage-users" class="active">Manage Users</a></li>
+                <li><a href="/admin/manage-stock">Blood Stock</a></li>
+                <li><a href="/admin/requests">Requests</a></li>
+                <li><a href="/admin/donations">Donations</a></li>
+                <li>
+                    <form th:action="@{/admin/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Manage Users Content -->
+    <div class="container">
+        <div class="dashboard-container">
+            <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+            
+            <div class="login-header">
+                <h2>Manage Users</h2>
+                <p>View and manage registered users</p>
+            </div>
+            
+            <!-- User Stats -->
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-number" th:text="${users != null ? #lists.size(users) : 0}">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="stat-icon">🩸</div>
+                    <div class="stat-number" th:text="${users != null ? #lists.size(users.?[bloodGroup != null]) : 0}">0</div>
+                    <div class="stat-label">Donors</div>
+                </div>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <label for="bloodGroupFilter">Filter by Blood Group:</label>
+                <select id="bloodGroupFilter" class="filter-select" onchange="filterUsers()">
+                    <option value="ALL">All Blood Groups</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                </select>
+                
+                <label for="cityFilter">Filter by City:</label>
+                <input type="text" id="cityFilter" class="filter-select" placeholder="Enter city name" onkeyup="filterUsers()">
+                
+                <button class="btn btn-primary" onclick="resetFilters()" style="padding: 8px 20px;">Reset Filters</button>
+            </div>
+            
+            <!-- Users Table -->
+            <div class="table-responsive">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Blood Group</th>
+                            <th>City</th>
+                            <th>Registered</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user : ${users}" 
+                            th:attr="data-bloodgroup=${user.bloodGroup != null ? user.bloodGroup : 'N/A'}, 
+                                     data-city=${user.city != null ? user.city.toLowerCase() : ''}">
+                            <td th:text="${user.id}"></td>
+                            <td><strong th:text="${user.username}"></strong></td>
+                            <td th:text="${user.fullName}"></td>
+                            <td th:text="${user.email}"></td>
+                            <td th:text="${user.phone != null ? user.phone : 'N/A'}"></td>
+                            <td>
+                                <span class="badge badge-info" th:text="${user.bloodGroup != null ? user.bloodGroup : 'Not set'}"></span>
+                            </td>
+                            <td th:text="${user.city != null ? user.city : 'N/A'}"></td>
+                            <td th:text="${user.registrationDate != null ? #temporals.format(user.registrationDate, 'dd-MM-yyyy') : 'N/A'}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${user.enabled} ? 'badge-success' : 'badge-danger'" 
+                                      th:text="${user.enabled} ? 'Active' : 'Inactive'"></span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" 
+                                            onclick="showDeleteModal(this)"
+                                            th:attr="data-user-id=${user.id}, data-user-name=${user.fullName}">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${users == null or #lists.isEmpty(users)}">
+                            <td colspan="10" style="text-align: center; padding: 40px;">
+                                <p style="font-size: 18px; margin-bottom: 20px;">No users found</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Delete</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete user <span id="userName"></span>?</p>
+                <p style="color: var(--danger-color);">This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Variables to store current delete target
+        var currentUserId = null;
+        var currentUserName = null;
+        
+        function showDeleteModal(button) {
+            // Get data from the button's data attributes
+            currentUserId = button.getAttribute('data-user-id');
+            currentUserName = button.getAttribute('data-user-name');
+            
+            // Update modal content
+            document.getElementById('userName').textContent = currentUserName;
+            
+            // Show modal
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            currentUserId = null;
+            currentUserName = null;
+        }
+        
+        function confirmDelete() {
+            if (currentUserId) {
+                // Create a form dynamically and submit it
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/admin/user/' + currentUserId + '/delete';
+                document.body.appendChild(form);
+                form.submit();
+            }
+            closeDeleteModal();
+        }
+        
+        function filterUsers() {
+            var bloodGroup = document.getElementById('bloodGroupFilter').value;
+            var cityFilter = document.getElementById('cityFilter').value.toLowerCase();
+            var table = document.getElementById('usersTable');
+            var rows = table.getElementsByTagName('tr');
+            
+            for (var i = 1; i < rows.length; i++) {
+                var row = rows[i];
+                var rowBloodGroup = row.getAttribute('data-bloodgroup');
+                var rowCity = row.getAttribute('data-city') || '';
+                
+                var bloodGroupMatch = bloodGroup === 'ALL' || rowBloodGroup === bloodGroup;
+                var cityMatch = cityFilter === '' || rowCity.includes(cityFilter);
+                
+                if (bloodGroupMatch && cityMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        }
+        
+        function resetFilters() {
+            document.getElementById('bloodGroupFilter').value = 'ALL';
+            document.getElementById('cityFilter').value = '';
+            filterUsers();
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            var modal = document.getElementById('deleteModal');
+            if (event.target == modal) {
+                closeDeleteModal();
+            }
+        }
+    </script>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved.</p>
+    </div>
+</body>
+</html>

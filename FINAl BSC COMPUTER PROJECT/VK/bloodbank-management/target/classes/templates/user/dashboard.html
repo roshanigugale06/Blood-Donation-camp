@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Blood Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/user/dashboard" class="navbar-brand">Blood Bank User Portal</a>
+            <ul class="navbar-menu">
+                <li><a href="/user/dashboard" class="active">Dashboard</a></li>
+                <li><a href="/user/profile">Profile</a></li>
+                <li><a href="/user/request-blood">Request Blood</a></li>
+                <li><a href="/user/register-donation">Donate Blood</a></li>
+                <li><a href="/user/donation-history">My Donations</a></li>
+                <li>
+                    <form th:action="@{/user/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Dashboard Content -->
+    <div class="container">
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        
+        <!-- Welcome Banner -->
+        <div style="background: linear-gradient(135deg, var(--primary-color), #c82333); color: white; padding: 30px; border-radius: 15px; margin-bottom: 30px;">
+            <h2>Welcome, <span th:text="${user.fullName}">User</span>! 👋</h2>
+            <p>Thank you for being part of our blood donor community. Your contribution can save lives.</p>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="stat-icon">📋</div>
+                <div class="stat-number" th:text="${#lists.size(recentRequests)}">0</div>
+                <div class="stat-label">Your Requests</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="stat-icon">❤️</div>
+                <div class="stat-number" th:text="${#lists.size(recentDonations)}">0</div>
+                <div class="stat-label">Your Donations</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-icon">🩸</div>
+                <div class="stat-number" th:text="${#lists.size(availableStocks)}">8</div>
+                <div class="stat-label">Blood Groups</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-number" th:text="${#aggregates.sum(availableStocks.![units])}">0</div>
+                <div class="stat-label">Total Units</div>
+            </div>
+        </div>
+        
+        <!-- Available Blood Stock -->
+        <h3 style="margin: 30px 0 20px;">Available Blood Stock</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Blood Group</th>
+                        <th>Units Available</th>
+                        <th>Quantity (ml)</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="stock : ${availableStocks}">
+                        <td><strong style="font-size: 18px;" th:text="${stock.bloodGroup}"></strong></td>
+                        <td th:text="${stock.units}"></td>
+                        <td th:text="${stock.quantity} + ' ml'"></td>
+                        <td th:text="${stock.storageLocation}"></td>
+                        <td>
+                            <span class="badge" th:classappend="${stock.units > 0} ? 'badge-success' : 'badge-danger'">
+                                <span th:text="${stock.units > 0} ? 'Available' : 'Out of Stock'"></span>
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0;">
+            <a href="/user/request-blood" class="btn btn-primary" style="text-align: center; background: var(--secondary-color);">
+                Request Blood
+            </a>
+            <a href="/user/register-donation" class="btn btn-primary" style="text-align: center;">
+                Register as Donor
+            </a>
+            <a href="/user/donation-history" class="btn btn-outline" style="text-align: center;">
+                View History
+            </a>
+        </div>
+        
+        <!-- Recent Requests -->
+        <h3 style="margin: 30px 0 20px;">Your Recent Blood Requests</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient Name</th>
+                        <th>Blood Group</th>
+                        <th>Units</th>
+                        <th>Hospital</th>
+                        <th>Request Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="request : ${recentRequests}">
+                        <td th:text="${request.patientName}"></td>
+                        <td><strong th:text="${request.bloodGroup}"></strong></td>
+                        <td th:text="${request.units}"></td>
+                        <td th:text="${request.hospitalName}"></td>
+                        <td th:text="${#temporals.format(request.requestDate, 'dd-MM-yyyy')}"></td>
+                        <td>
+                            <span class="badge" th:classappend="${request.status == 'PENDING'} ? 'badge-warning' : 
+                                (${request.status == 'APPROVED'} ? 'badge-success' : 'badge-danger')" 
+                                th:text="${request.status}"></span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(recentRequests)}">
+                        <td colspan="6" style="text-align: center;">No blood requests found</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved.</p>
+    </div>
+</body>
+</html>

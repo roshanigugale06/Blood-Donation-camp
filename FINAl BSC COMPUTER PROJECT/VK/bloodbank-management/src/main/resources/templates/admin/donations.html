@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donations - Blood Bank Admin</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .filter-section {
+            background: var(--light-bg);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-select {
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            min-width: 150px;
+        }
+        
+        .request-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            border-radius: 6px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .test-results {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .test-results:hover {
+            white-space: normal;
+            overflow: visible;
+            background: white;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/admin/dashboard" class="navbar-brand">Blood Bank Admin</a>
+            <ul class="navbar-menu">
+                <li><a href="/admin/dashboard">Dashboard</a></li>
+                <li><a href="/admin/manage-users">Manage Users</a></li>
+                <li><a href="/admin/manage-stock">Blood Stock</a></li>
+                <li><a href="/admin/requests">Requests</a></li>
+                <li><a href="/admin/donations" class="active">Donations</a></li>
+                <li>
+                    <form th:action="@{/admin/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Donations Content -->
+    <div class="container">
+        <div class="dashboard-container">
+            <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+            
+            <div class="login-header">
+                <h2>Blood Donations Management</h2>
+                <p>Review and process blood donations</p>
+            </div>
+            
+            <!-- Donation Statistics -->
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="stat-icon">❤️</div>
+                    <div class="stat-number" th:text="${donations != null ? #lists.size(donations) : 0}">0</div>
+                    <div class="stat-label">Total Donations</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-number" th:text="${donations != null ? #lists.size(donations.?[status == 'PENDING']) : 0}">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-number" th:text="${donations != null ? #lists.size(donations.?[status == 'APPROVED']) : 0}">0</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <div class="stat-icon">🩸</div>
+                    <div class="stat-number" th:text="${donations != null ? #aggregates.sum(donations.?[status == 'APPROVED'].![quantity]) : 0}">0</div>
+                    <div class="stat-label">Blood Collected (ml)</div>
+                </div>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <label for="statusFilter">Filter by Status:</label>
+                <select id="statusFilter" class="filter-select" onchange="filterDonations()">
+                    <option value="ALL">All Donations</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                </select>
+                
+                <label for="bloodGroupFilter">Blood Group:</label>
+                <select id="bloodGroupFilter" class="filter-select" onchange="filterDonations()">
+                    <option value="ALL">All Groups</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                </select>
+                
+                <button class="btn btn-primary" onclick="resetFilters()" style="padding: 8px 20px;">Reset Filters</button>
+            </div>
+            
+            <!-- Donations Table -->
+            <div class="table-responsive">
+                <table id="donationsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Donor Name</th>
+                            <th>Blood Group</th>
+                            <th>Quantity (ml)</th>
+                            <th>Donation Date</th>
+                            <th>Hospital</th>
+                            <th>Type</th>
+                            <th>Tested</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="donation : ${donations}" 
+                            th:attr="data-status=${donation.status}, data-bloodgroup=${donation.bloodGroup}, data-donation-id=${donation.id}">
+                            <td th:text="${donation.id}"></td>
+                            <td>
+                                <span class="tooltip">
+                                    <span th:text="${donation.user != null ? donation.user.fullName : 'Unknown'}"></span>
+                                    <span class="tooltip-text" th:text="'Contact: ' + ${donation.user != null ? donation.user.phone : 'N/A'}"></span>
+                                </span>
+                            </td>
+                            <td>
+                                <strong th:text="${donation.bloodGroup}" 
+                                        style="color: var(--primary-color); font-size: 16px;"></strong>
+                            </td>
+                            <td th:text="${donation.quantity} + ' ml'"></td>
+                            <td th:text="${donation.donationDate != null ? #temporals.format(donation.donationDate, 'dd-MM-yyyy') : 'N/A'}"></td>
+                            <td th:text="${donation.hospitalName}"></td>
+                            <td th:text="${donation.donationType}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${donation.tested} ? 'badge-success' : 'badge-warning'">
+                                    <span th:text="${donation.tested} ? 'Tested' : 'Pending Test'"></span>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge" th:classappend="${donation.status == 'PENDING'} ? 'badge-warning' : 
+                                    (${donation.status == 'APPROVED'} ? 'badge-success' : 'badge-danger')" 
+                                    th:text="${donation.status}"></span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" 
+                                            th:attr="onclick='viewDonationDetails(' + ${donation.id} + ')'">
+                                        View
+                                    </button>
+                                    
+                                    <th:block th:if="${donation.status == 'PENDING'}">
+                                        <button class="btn btn-success" style="padding: 5px 10px; font-size: 12px;" 
+                                                th:attr="onclick='showApproveDonationModal(' + ${donation.id} + ')'">
+                                            Approve
+                                        </button>
+                                        <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" 
+                                                th:attr="onclick='showRejectDonationModal(' + ${donation.id} + ')'">
+                                            Reject
+                                        </button>
+                                    </th:block>
+                                    
+                                    <th:block th:if="${donation.tested and donation.testResults != null}">
+                                        <span class="badge badge-info test-results" 
+                                              th:title="${donation.testResults}" 
+                                              th:text="'Results'"></span>
+                                    </th:block>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${donations == null or #lists.isEmpty(donations)}">
+                            <td colspan="10" style="text-align: center; padding: 40px;">
+                                <p style="font-size: 18px; margin-bottom: 20px;">No donations found</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- View Donation Details Modal -->
+    <div id="viewDonationModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Donation Details</h3>
+                <button class="modal-close" onclick="closeViewDonationModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="donationDetails">
+                <!-- Details will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeViewDonationModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Approve Donation Modal -->
+    <div id="approveDonationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Donation Approval</h3>
+                <button class="modal-close" onclick="closeApproveDonationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to approve this donation?</p>
+                <p style="color: var(--success-color);">This will add the blood units to inventory after testing.</p>
+                
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Test Results:</label>
+                    <textarea id="testResults" rows="3" 
+                              style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 5px;"
+                              placeholder="Enter test results...">All tests passed. Blood is healthy.</textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
+                <form id="approveDonationForm" method="post">
+                    <input type="hidden" name="testResults" id="testResultsInput">
+                    <button type="button" class="btn btn-outline" onclick="closeApproveDonationModal()">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="submitApproveDonation()">Approve Donation</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reject Donation Modal -->
+    <div id="rejectDonationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Reject Donation</h3>
+                <button class="modal-close" onclick="closeRejectDonationModal()">&times;</button>
+            </div>
+            <form id="rejectDonationForm" method="post">
+                <div class="modal-body">
+                    <p>Please provide reason for rejection:</p>
+                    <div class="form-group">
+                        <textarea name="reason" rows="4" placeholder="Enter rejection reason..." 
+                                  style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 5px;" 
+                                  required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="closeRejectDonationModal()">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Donation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved.</p>
+    </div>
+    
+    <script>
+        // Store donation details
+        var donationDetailsMap = {};
+        
+        // Load donation details from table
+        function loadDonationDetails() {
+            var table = document.getElementById('donationsTable');
+            if (!table) return;
+            
+            var rows = table.getElementsByTagName('tr');
+            
+            for (var i = 1; i < rows.length; i++) {
+                var row = rows[i];
+                var donationId = row.getAttribute('data-donation-id');
+                if (donationId) {
+                    var cells = row.getElementsByTagName('td');
+                    if (cells.length >= 10) {
+                        donationDetailsMap[donationId] = {
+                            id: donationId,
+                            donorName: cells[1].innerText,
+                            bloodGroup: cells[2].innerText,
+                            quantity: cells[3].innerText.replace(' ml', ''),
+                            donationDate: cells[4].innerText,
+                            hospital: cells[5].innerText,
+                            donationType: cells[6].innerText,
+                            status: cells[8].innerText
+                        };
+                    }
+                }
+            }
+        }
+        
+        // Filter donations
+        function filterDonations() {
+            var statusFilter = document.getElementById('statusFilter').value;
+            var bloodGroupFilter = document.getElementById('bloodGroupFilter').value;
+            var table = document.getElementById('donationsTable');
+            var rows = table.getElementsByTagName('tr');
+            
+            for (var i = 1; i < rows.length; i++) {
+                var row = rows[i];
+                var status = row.getAttribute('data-status');
+                var bloodGroup = row.getAttribute('data-bloodgroup');
+                
+                var statusMatch = statusFilter === 'ALL' || status === statusFilter;
+                var bloodGroupMatch = bloodGroupFilter === 'ALL' || bloodGroup === bloodGroupFilter;
+                
+                if (statusMatch && bloodGroupMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        }
+        
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('statusFilter').value = 'ALL';
+            document.getElementById('bloodGroupFilter').value = 'ALL';
+            filterDonations();
+        }
+        
+        // View donation details
+        function viewDonationDetails(donationId) {
+            var donation = donationDetailsMap[donationId];
+            if (donation) {
+                var detailsHtml = `
+                    <div class="request-details">
+                        <h4>Donor Information</h4>
+                        <p><strong>Name:</strong> ${donation.donorName}</p>
+                        <p><strong>Blood Group:</strong> <span style="color: var(--primary-color); font-weight: bold;">${donation.bloodGroup}</span></p>
+                        <p><strong>Quantity:</strong> ${donation.quantity} ml</p>
+                    </div>
+                    
+                    <div class="request-details" style="border-left-color: var(--primary-color);">
+                        <h4>Donation Information</h4>
+                        <p><strong>Donation Date:</strong> ${donation.donationDate}</p>
+                        <p><strong>Hospital:</strong> ${donation.hospital}</p>
+                        <p><strong>Donation Type:</strong> ${donation.donationType}</p>
+                    </div>
+                    
+                    <div class="request-details" style="border-left-color: ${getStatusColor(donation.status)};">
+                        <h4>Status</h4>
+                        <p><strong>Current Status:</strong> 
+                            <span class="badge" style="background: ${getStatusColor(donation.status)}; color: white;">${donation.status}</span>
+                        </p>
+                    </div>
+                `;
+                
+                document.getElementById('donationDetails').innerHTML = detailsHtml;
+                document.getElementById('viewDonationModal').style.display = 'block';
+            }
+        }
+        
+        // Close view modal
+        function closeViewDonationModal() {
+            document.getElementById('viewDonationModal').style.display = 'none';
+        }
+        
+        // Show approve modal
+        function showApproveDonationModal(donationId) {
+            document.getElementById('approveDonationForm').action = '/admin/donation/' + donationId + '/approve';
+            document.getElementById('approveDonationModal').style.display = 'block';
+        }
+        
+        // Close approve modal
+        function closeApproveDonationModal() {
+            document.getElementById('approveDonationModal').style.display = 'none';
+        }
+        
+        // Submit approve donation
+        function submitApproveDonation() {
+            var testResults = document.getElementById('testResults').value;
+            var form = document.getElementById('approveDonationForm');
+            
+            // Create input for test results if not exists
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'testResults';
+            input.value = testResults;
+            form.appendChild(input);
+            
+            form.submit();
+        }
+        
+        // Show reject modal
+        function showRejectDonationModal(donationId) {
+            document.getElementById('rejectDonationForm').action = '/admin/donation/' + donationId + '/reject';
+            document.getElementById('rejectDonationModal').style.display = 'block';
+        }
+        
+        // Close reject modal
+        function closeRejectDonationModal() {
+            document.getElementById('rejectDonationModal').style.display = 'none';
+        }
+        
+        // Get status color
+        function getStatusColor(status) {
+            switch(status) {
+                case 'PENDING': return '#f39c12';
+                case 'APPROVED': return '#2ecc71';
+                case 'REJECTED': return '#e74c3c';
+                default: return '#95a5a6';
+            }
+        }
+        
+        // Load data when page loads
+        window.onload = function() {
+            loadDonationDetails();
+        };
+        
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            var viewModal = document.getElementById('viewDonationModal');
+            var approveModal = document.getElementById('approveDonationModal');
+            var rejectModal = document.getElementById('rejectDonationModal');
+            
+            if (event.target == viewModal) {
+                viewModal.style.display = 'none';
+            }
+            if (event.target == approveModal) {
+                approveModal.style.display = 'none';
+            }
+            if (event.target == rejectModal) {
+                rejectModal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

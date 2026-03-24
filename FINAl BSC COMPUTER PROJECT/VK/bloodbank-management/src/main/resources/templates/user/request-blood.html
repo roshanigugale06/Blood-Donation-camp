@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Blood - Blood Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/user/dashboard" class="navbar-brand">Blood Bank User Portal</a>
+            <ul class="navbar-menu">
+                <li><a href="/user/dashboard">Dashboard</a></li>
+                <li><a href="/user/profile">Profile</a></li>
+                <li><a href="/user/request-blood" class="active">Request Blood</a></li>
+                <li><a href="/user/register-donation">Donate Blood</a></li>
+                <li><a href="/user/donation-history">My Donations</a></li>
+                <li>
+                    <form th:action="@{/user/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Request Blood Form -->
+    <div class="container">
+        <div class="dashboard-container" style="max-width: 800px; margin: 0 auto;">
+            <div class="login-header">
+                <h2>Request Blood</h2>
+                <p>Please provide details for blood request</p>
+            </div>
+            
+            <form th:action="@{/user/request-blood}" method="post" th:object="${bloodRequest}">
+                <div class="form-group">
+                    <label>Patient Name *</label>
+                    <input type="text" th:field="*{patientName}" placeholder="Enter patient's full name" required>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Blood Group Required *</label>
+                        <select th:field="*{bloodGroup}" required>
+                            <option value="">Select Blood Group</option>
+                            <option th:each="group : ${bloodGroups}" th:value="${group}" th:text="${group}"></option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Units Required *</label>
+                        <input type="number" th:field="*{units}" placeholder="Number of units" min="1" max="10" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Hospital Name *</label>
+                    <input type="text" th:field="*{hospitalName}" placeholder="Enter hospital name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Hospital Address</label>
+                    <textarea th:field="*{hospitalAddress}" placeholder="Enter hospital address" rows="2"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Doctor's Name</label>
+                    <input type="text" th:field="*{doctorName}" placeholder="Enter doctor's name">
+                </div>
+                
+                <div class="form-group">
+                    <label>Contact Phone *</label>
+                    <input type="tel" th:field="*{contactPhone}" placeholder="Enter contact number" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Required By Date</label>
+                    <input type="datetime-local" th:field="*{requiredBy}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Reason for Request</label>
+                    <textarea th:field="*{reason}" placeholder="Please provide reason for blood request" rows="3"></textarea>
+                </div>
+                
+                <div class="alert alert-info">
+                    <strong>Note:</strong> Your request will be reviewed by our admin team. You will be notified once it's approved.
+                </div>
+                
+                <div style="display: flex; gap: 15px;">
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                    <a href="/user/dashboard" class="btn btn-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved.</p>
+    </div>
+</body>
+</html>

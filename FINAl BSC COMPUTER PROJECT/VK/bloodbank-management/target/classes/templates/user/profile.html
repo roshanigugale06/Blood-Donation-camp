@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Blood Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/user/dashboard" class="navbar-brand">Blood Bank User Portal</a>
+            <ul class="navbar-menu">
+                <li><a href="/user/dashboard">Dashboard</a></li>
+                <li><a href="/user/profile" class="active">Profile</a></li>
+                <li><a href="/user/request-blood">Request Blood</a></li>
+                <li><a href="/user/register-donation">Donate Blood</a></li>
+                <li><a href="/user/donation-history">My Donations</a></li>
+                <li>
+                    <form th:action="@{/user/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 15px;">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Profile Content -->
+    <div class="container">
+        <div class="dashboard-container">
+            <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+            
+            <div style="display: grid; grid-template-columns: 300px 1fr; gap: 30px;">
+                <!-- Profile Sidebar -->
+                <div style="text-align: center;">
+                    <div style="width: 150px; height: 150px; background: linear-gradient(135deg, var(--primary-color), #c82333); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 60px; color: white;">👤</span>
+                    </div>
+                    <h2 th:text="${user.fullName}">User Name</h2>
+                    <p style="color: #666;" th:text="${user.email}">email@example.com</p>
+                    
+                    <div style="margin-top: 30px;">
+                        <div style="background: var(--light-bg); padding: 20px; border-radius: 10px;">
+                            <h4>Blood Group</h4>
+                            <p style="font-size: 36px; font-weight: bold; color: var(--primary-color);" th:text="${user.bloodGroup ?: 'Not Set'}">A+</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <p><strong>Member since:</strong> 
+                            <span th:text="${user.registrationDate != null ? #temporals.format(user.registrationDate, 'dd MMM yyyy') : 'N/A'}"></span>
+                        </p>
+                        <p><strong>Last Login:</strong> 
+                            <span th:text="${user.lastLogin != null ? #temporals.format(user.lastLogin, 'dd MMM yyyy HH:mm') : 'First login'}"></span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Profile Form -->
+                <div>
+                    <h3 style="margin-bottom: 20px;">Edit Profile Information</h3>
+                    
+                    <form th:action="@{/user/profile/update}" method="post" th:object="${user}">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" th:field="*{fullName}" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" th:field="*{email}" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="tel" th:field="*{phone}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Blood Group</label>
+                                <select th:field="*{bloodGroup}">
+                                    <option value="">Select Blood Group</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Age</label>
+                                <input type="number" th:field="*{age}" min="18" max="65">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <select th:field="*{gender}">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Address</label>
+                            <textarea th:field="*{address}" rows="3"></textarea>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" th:field="*{city}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>State</label>
+                                <input type="text" th:field="*{state}">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: auto; padding: 12px 40px;">Update Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2026Blood Bank Management System. All rights reserved.</p>
+    </div>
+</body>
+</html>
